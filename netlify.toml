@@ -1,0 +1,29 @@
+# Netlify configuration file for Peta Sebaran Hotspot Adaro Indonesia
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Proxy API routes to Netlify Functions
+[[redirects]]
+  from = "/api/hotspots"
+  to = "/.netlify/functions/hotspots"
+  status = 200
+
+[[redirects]]
+  from = "/api/iupk"
+  to = "/.netlify/functions/iupk"
+  status = 200
+
+# Single Page Application (SPA) redirect for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
