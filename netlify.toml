@@ -22,6 +22,11 @@
   to = "/.netlify/functions/iupk"
   status = 200
 
+[[redirects]]
+  from = "/api/geocode"
+  to = "/.netlify/functions/geocode"
+  status = 200
+
 # Single Page Application (SPA) redirect for client-side routing
 [[redirects]]
   from = "/*"
