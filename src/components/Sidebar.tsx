@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Hotspot, HotspotTimeRange } from "../types";
 import { Flame, CheckCircle, ShieldAlert, X, MapPin, Calendar, Clock, RefreshCw, Radio } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { cn, getTimeRangeLabel, getTimeRangeDescription, formatHotspotRelativeTime, formatDateWITA, formatTimeWITA } from "../utils";
+import { cn, getTimeRangeLabel, getTimeRangeDescription, formatHotspotRelativeTime, formatDateWITA, formatTimeWITA, fetchAddressFromCoordinates } from "../utils";
+import PrintPreviewModal from "./PrintPreviewModal";
 
 interface SidebarProps {
   hotspots: Hotspot[];
@@ -13,7 +14,26 @@ interface SidebarProps {
   timeRange: HotspotTimeRange;
   onTimeRangeChange: (range: HotspotTimeRange) => void;
   isLoading?: boolean;
+  onOpenPrintPreview: () => void;
 }
+
+const SidebarAddress = ({ lat, lng }: { lat: number, lng: number }) => {
+  const [address, setAddress] = useState<string>("Memuat lokasi...");
+  
+  useEffect(() => {
+    let isMounted = true;
+    fetchAddressFromCoordinates(lat, lng).then(res => {
+      if (isMounted) setAddress(res);
+    });
+    return () => { isMounted = false; };
+  }, [lat, lng]);
+
+  return (
+    <div className="text-[11px] text-slate-400 mt-2 p-2 bg-slate-800/50 rounded-lg border border-slate-700">
+      <span className="font-semibold text-slate-300">Lokasi:</span> {address}
+    </div>
+  );
+};
 
 export default function Sidebar({ 
   hotspots, 
@@ -23,11 +43,13 @@ export default function Sidebar({
   onCloseMobile,
   timeRange,
   onTimeRangeChange,
-  isLoading
+  isLoading,
+  onOpenPrintPreview
 }: SidebarProps) {
   const newCount = hotspots.filter(h => h.status === "new").length;
 
   return (
+    <>
     <div className="w-full h-full bg-[#111827] border-r border-slate-800 flex flex-col z-10 relative">
       {/* Sidebar Header */}
       <div className="p-3.5 sm:p-4 border-b border-slate-800 bg-slate-900/60 shrink-0">
@@ -210,6 +232,8 @@ export default function Sidebar({
                     </span>
                   </div>
 
+                  <SidebarAddress lat={hotspot.location.lat} lng={hotspot.location.lng} />
+
                   {isNew && (
                     <button
                       onClick={(e) => {
@@ -239,14 +263,13 @@ export default function Sidebar({
           </span>
         </div>
         <button 
-          onClick={() => {
-            alert(`Laporan Pengamanan Adaro (${getTimeRangeDescription(timeRange)}):\nTotal Titik Api Terdeteksi: ${hotspots.length}\nTitik Api Baru: ${newCount}\nSemua area dalam pemantauan terpadu.`);
-          }}
+          onClick={onOpenPrintPreview}
           className="w-full min-h-[44px] py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors text-white flex items-center justify-center touch-manipulation"
         >
-          Cetak Ringkasan Pengamanan
+          Cetak Ringkasan Sebaran Hotspot
         </button>
       </div>
     </div>
+    </>
   );
 }

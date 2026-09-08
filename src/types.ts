@@ -14,6 +14,7 @@ export interface Hotspot {
   zone: "iupk" | "buffer" | "outside";
   acqDate?: string; // YYYY-MM-DD
   daysAgo?: number; // 0 = today, 1 = yesterday, etc.
+  address?: string; // e.g. Desa, Kecamatan, Kabupaten, Provinsi
 }
 
 export interface GeoJsonPolygon {

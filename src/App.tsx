@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, Key, Flame, Calendar, RefreshCw, Radio, Clock } from "lucide-react";
 import MapComponent from "./components/MapComponent";
 import Sidebar from "./components/Sidebar";
+import PrintPreviewModal from "./components/PrintPreviewModal";
 import { Hotspot, HotspotTimeRange } from "./types";
 import { fetchNasaHotspots, fetchDynamicIUPKBoundary } from "./data";
 import { cn, getTimeRangeLabel, getTimeRangeDescription } from "./utils";
@@ -20,6 +21,7 @@ export default function App() {
   const [boundaryLoaded, setBoundaryLoaded] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   const loadHotspots = useCallback(async (range: HotspotTimeRange = timeRange) => {
     setIsLoading(true);
@@ -64,17 +66,24 @@ export default function App() {
   };
 
   // Fetch real hotspots from NASA
+  // Load boundary only once on mount
   useEffect(() => {
-    const initData = async () => {
-      // First try to load dynamic IUPK boundaries from WFS
-      await fetchDynamicIUPKBoundary();
-      setBoundaryLoaded(true);
-      
-      // Then load hotspots based on initial timeRange (1 day)
-      await loadHotspots(timeRange);
+    let isMounted = true;
+    const initBoundary = async () => {
+      try {
+        await fetchDynamicIUPKBoundary();
+      } finally {
+        if (isMounted) setBoundaryLoaded(true);
+      }
     };
+    initBoundary();
+    return () => { isMounted = false; };
+  }, []);
 
-    initData();
+  // Load hotspots when timeRange changes
+  useEffect(() => {
+    loadHotspots(timeRange);
+    
     // Refresh every 10 minutes
     const interval = setInterval(() => {
       loadHotspots(timeRange);
@@ -113,9 +122,9 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-[#0f172a] text-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-[100dvh] w-full bg-[#0f172a] text-slate-100 overflow-hidden font-sans print:h-auto print:overflow-visible print:bg-white print:text-black">
       {/* Header */}
-      <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-[#1e293b] border-b border-slate-700 shadow-md shrink-0 z-20 relative gap-2">
+      <header className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-[#1e293b] border-b border-slate-700 shadow-md shrink-0 z-20 relative gap-2 print:hidden">
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="w-9 h-9 sm:w-10 sm:h-10 bg-orange-600 rounded-xl flex items-center justify-center font-bold text-base sm:text-xl text-white shrink-0 shadow-sm">
             AI
@@ -279,7 +288,7 @@ export default function App() {
       </div>
 
       {/* Main Content Layout */}
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex overflow-hidden relative print:hidden">
         {/* Mobile Backdrop Overlay */}
         {isMobileSidebarOpen && (
           <div 
@@ -306,6 +315,7 @@ export default function App() {
             timeRange={timeRange}
             onTimeRangeChange={handleTimeRangeChange}
             isLoading={isLoading}
+            onOpenPrintPreview={() => setShowPrintPreview(true)}
           />
         </aside>
 
@@ -335,11 +345,19 @@ export default function App() {
       </main>
       
       {/* Footer */}
-      <footer className="h-7 sm:h-8 bg-[#0f172a] border-t border-slate-800 flex items-center justify-between px-3.5 sm:px-6 text-[9px] sm:text-[10px] text-slate-500 font-mono shrink-0 z-10 relative select-none">
+      <footer className="h-7 sm:h-8 bg-[#0f172a] border-t border-slate-800 flex items-center justify-between px-3.5 sm:px-6 text-[9px] sm:text-[10px] text-slate-500 font-mono shrink-0 z-10 relative select-none print:hidden">
         <div className="truncate">SUMBER: VIIRS / MODIS NASA ({getTimeRangeDescription(timeRange).toUpperCase()})</div>
         <div className="hidden xs:block">STATUS: AKTIF TERPADU</div>
         <div className="truncate">OPERATOR: PENGAMANAN_ADARO</div>
       </footer>
+
+      {showPrintPreview && (
+        <PrintPreviewModal 
+          hotspots={hotspots}
+          timeRange={timeRange}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
     </div>
   );
 }

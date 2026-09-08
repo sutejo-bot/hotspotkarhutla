@@ -1,12 +1,4 @@
-import { fetchNasaHotspots } from './src/data.js';
-
-fetchNasaHotspots("now").then(res => {
-  console.log("Hotspots from now:", res.length);
-  const found = res.find(h => Math.abs(h.location.lat - -2.20664) < 0.001);
-  console.log("Found specific hotspot:", found);
-});
-fetchNasaHotspots(7).then(res => {
-  console.log("Hotspots from 7 days:", res.length);
-  const found = res.find(h => Math.abs(h.location.lat - -2.20664) < 0.001);
-  console.log("Found specific hotspot:", found);
-});
+const lat = -2.2;
+const lng = 115.4;
+const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=id`;
+fetch(url).then(r => r.json()).then(console.log).catch(console.error);

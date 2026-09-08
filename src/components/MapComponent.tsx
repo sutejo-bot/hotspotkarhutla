@@ -21,7 +21,7 @@ import {
 import { 
   ADARO_HAUL_ROAD_COORDINATES
 } from "../adaroSecurityData";
-import { formatDateWITA, formatTimeWITA } from "../utils";
+import { formatDateWITA, formatTimeWITA, fetchAddressFromCoordinates } from "../utils";
 import { 
   Flame, 
   Layers, 
@@ -205,6 +205,24 @@ const createMilestoneIcon = (km: number | string, isMajor: boolean, isCompact: b
     iconAnchor: [width / 2, 10],
     popupAnchor: [0, -10]
   });
+};
+
+const PopupAddress = ({ lat, lng }: { lat: number, lng: number }) => {
+  const [address, setAddress] = useState<string>("Memuat lokasi...");
+  
+  useEffect(() => {
+    let isMounted = true;
+    fetchAddressFromCoordinates(lat, lng).then(res => {
+      if (isMounted) setAddress(res);
+    });
+    return () => { isMounted = false; };
+  }, [lat, lng]);
+
+  return (
+    <div className="text-[11px] mt-1.5 text-slate-700 leading-tight border-t border-slate-100 pt-1.5">
+      <span className="font-semibold text-slate-800">Lokasi:</span> {address}
+    </div>
+  );
 };
 
 export default function MapComponent({ 
@@ -461,6 +479,7 @@ export default function MapComponent({
                   Lat: {hotspot.location.lat.toFixed(5)}<br/>
                   Lng: {hotspot.location.lng.toFixed(5)}
                 </a>
+                <PopupAddress lat={hotspot.location.lat} lng={hotspot.location.lng} />
               </div>
             </Popup>
           </Marker>

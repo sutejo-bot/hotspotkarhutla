@@ -131,6 +131,36 @@ async function startServer() {
     }
   });
 
+  // API route for OpenStreetMap Nominatim Geocoding Proxy
+  app.get("/api/geocode", async (req, res) => {
+    try {
+      const { lat, lng } = req.query;
+      
+      if (!lat || !lng) {
+        return res.status(400).json({ error: "Missing lat or lng" });
+      }
+
+      // OpenStreetMap Nominatim is free and does not require an API key, 
+      // but requires a valid User-Agent to avoid being blocked.
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=id&email=namasayasutejo@gmail.com`;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "AdaroHotspotMonitor/1.0 (namasayasutejo@gmail.com)"
+        }
+      });
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ error: "Failed to fetch from OpenStreetMap Nominatim" });
+      }
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching geocoding:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // API route to proxy ESDM ArcGIS REST API
   app.get("/api/iupk", async (req, res) => {
     try {
