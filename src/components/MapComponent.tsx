@@ -528,7 +528,7 @@ export default function MapComponent({
             <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-blue-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Peta Pengamanan Adaro</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Peta Sebaran Hotspot</span>
               </div>
               <button 
                 onClick={() => setShowLayerPanel(false)}

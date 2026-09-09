@@ -39,7 +39,7 @@ async function startServer() {
         return res.status(500).json({ error: "Token Fonnte belum dikonfigurasi. Harap tambahkan 'FONNTE_TOKEN' pada menu Environment Variables di pengaturan Netlify Anda." });
       }
 
-      const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\nBuka Peta: https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\n📍 *Buka Peta:*\nhttps://maps.google.com/?q=${lat},${lng}`;
 
       const formData = new URLSearchParams();
       formData.append('target', target);
@@ -85,7 +85,7 @@ async function startServer() {
         return res.status(500).json({ error: "Token atau Chat ID Telegram belum dikonfigurasi. Harap tambahkan 'TELEGRAM_BOT_TOKEN' dan 'TELEGRAM_CHAT_ID' di menu Environment Variables." });
       }
 
-      const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\n[Buka Peta](https://www.google.com/maps/search/?api=1&query=${lat},${lng})`;
+      const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\n📍 *Buka Peta:*\nhttps://maps.google.com/?q=${lat},${lng}`;
 
       const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
