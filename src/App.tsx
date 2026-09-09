@@ -10,7 +10,7 @@ import Sidebar from "./components/Sidebar";
 import PrintPreviewModal from "./components/PrintPreviewModal";
 import { Hotspot, HotspotTimeRange } from "./types";
 import { fetchNasaHotspots, fetchDynamicIUPKBoundary } from "./data";
-import { cn, getTimeRangeLabel, getTimeRangeDescription } from "./utils";
+import { cn, getTimeRangeLabel, getTimeRangeDescription, fetchAddressFromCoordinates, formatDateWITA, formatTimeWITA } from "./utils";
 
 export default function App() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
@@ -91,6 +91,53 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, [timeRange, loadHotspots]);
+
+  // Auto-send WhatsApp notification for new hotspots
+  useEffect(() => {
+    if (!boundaryLoaded || hotspots.length === 0) return;
+
+    const notifiedIdsStr = localStorage.getItem('auto_notified_hotspots') || '[]';
+    let notifiedIds: string[];
+    try {
+      notifiedIds = JSON.parse(notifiedIdsStr);
+    } catch {
+      notifiedIds = [];
+    }
+
+    const notifiedSet = new Set(notifiedIds);
+    const toNotify = hotspots.filter(h => h.status === 'new' && !notifiedSet.has(h.id));
+
+    if (toNotify.length > 0) {
+      toNotify.forEach(async (hotspot) => {
+        try {
+          const address = await fetchAddressFromCoordinates(hotspot.location.lat, hotspot.location.lng);
+          
+          await fetch('/api/notify-wa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              target: '085821237889',
+              lat: hotspot.location.lat,
+              lng: hotspot.location.lng,
+              location: address,
+              date: formatDateWITA(new Date(hotspot.detectedAt)) + ' ' + formatTimeWITA(new Date(hotspot.detectedAt)),
+              id: hotspot.id
+            })
+          });
+          console.log(`Auto WA sent for hotspot ${hotspot.id}`);
+        } catch (err) {
+          console.error("Auto WA failed for", hotspot.id, err);
+        }
+      });
+
+      // Update localStorage immediately
+      toNotify.forEach(h => notifiedIds.push(h.id));
+      if (notifiedIds.length > 1000) {
+        notifiedIds = notifiedIds.slice(notifiedIds.length - 1000);
+      }
+      localStorage.setItem('auto_notified_hotspots', JSON.stringify(notifiedIds));
+    }
+  }, [hotspots, boundaryLoaded]);
 
   const acknowledgeHotspot = (id: string) => {
     setHotspots(prev => prev.map(h => 
