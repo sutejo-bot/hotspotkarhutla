@@ -38,7 +38,7 @@ export const handler = async (event: HandlerEvent): Promise<HandlerResponse> => 
       return { 
         statusCode: 500, 
         headers, 
-        body: JSON.stringify({ error: "FONNTE_TOKEN is not configured on the server." }) 
+        body: JSON.stringify({ error: "Token Fonnte belum dikonfigurasi. Harap tambahkan 'FONNTE_TOKEN' pada menu Environment Variables di pengaturan Netlify Anda." }) 
       };
     }
 

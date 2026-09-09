@@ -36,7 +36,7 @@ async function startServer() {
       const token = process.env.FONNTE_TOKEN;
       
       if (!token) {
-        return res.status(500).json({ error: "FONNTE_TOKEN is not configured on the server." });
+        return res.status(500).json({ error: "Token Fonnte belum dikonfigurasi. Harap tambahkan 'FONNTE_TOKEN' pada menu Environment Variables di pengaturan Netlify Anda." });
       }
 
       const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\nBuka Peta: https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
