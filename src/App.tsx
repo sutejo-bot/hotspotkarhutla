@@ -111,8 +111,10 @@ export default function App() {
       toNotify.forEach(async (hotspot) => {
         try {
           const address = await fetchAddressFromCoordinates(hotspot.location.lat, hotspot.location.lng);
+          const formattedDate = formatDateWITA(new Date(hotspot.detectedAt)) + ' ' + formatTimeWITA(new Date(hotspot.detectedAt));
           
-          await fetch('/api/notify-wa', {
+          // Send WA
+          fetch('/api/notify-wa', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -120,13 +122,26 @@ export default function App() {
               lat: hotspot.location.lat,
               lng: hotspot.location.lng,
               location: address,
-              date: formatDateWITA(new Date(hotspot.detectedAt)) + ' ' + formatTimeWITA(new Date(hotspot.detectedAt)),
+              date: formattedDate,
               id: hotspot.id
             })
-          });
-          console.log(`Auto WA sent for hotspot ${hotspot.id}`);
+          }).then(res => res.json()).then(data => console.log(`Auto WA for ${hotspot.id}:`, data)).catch(err => console.error("Auto WA failed", err));
+
+          // Send Telegram
+          fetch('/api/notify-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lat: hotspot.location.lat,
+              lng: hotspot.location.lng,
+              location: address,
+              date: formattedDate,
+              id: hotspot.id
+            })
+          }).then(res => res.json()).then(data => console.log(`Auto TG for ${hotspot.id}:`, data)).catch(err => console.error("Auto TG failed", err));
+
         } catch (err) {
-          console.error("Auto WA failed for", hotspot.id, err);
+          console.error("Failed to prepare auto notifications for", hotspot.id, err);
         }
       });
 

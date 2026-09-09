@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Hotspot, HotspotTimeRange } from "../types";
-import { Flame, CheckCircle, ShieldAlert, X, MapPin, Calendar, Clock, RefreshCw, Radio, MessageCircle, Loader2 } from "lucide-react";
+import { Flame, CheckCircle, ShieldAlert, X, MapPin, Calendar, Clock, RefreshCw, Radio, MessageCircle, Loader2, Send } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn, getTimeRangeLabel, getTimeRangeDescription, formatHotspotRelativeTime, formatDateWITA, formatTimeWITA, fetchAddressFromCoordinates } from "../utils";
 import PrintPreviewModal from "./PrintPreviewModal";
@@ -48,6 +48,37 @@ export default function Sidebar({
 }: SidebarProps) {
   const newCount = hotspots.filter(h => h.status === "new").length;
   const [sendingWaId, setSendingWaId] = useState<string | null>(null);
+  const [sendingTgId, setSendingTgId] = useState<string | null>(null);
+
+  const handleSendTelegram = async (hotspot: Hotspot) => {
+    setSendingTgId(hotspot.id);
+    try {
+      const address = await fetchAddressFromCoordinates(hotspot.location.lat, hotspot.location.lng);
+      
+      const response = await fetch('/api/notify-telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lat: hotspot.location.lat,
+          lng: hotspot.location.lng,
+          location: address,
+          date: formatDateWITA(new Date(hotspot.detectedAt)) + ' ' + formatTimeWITA(new Date(hotspot.detectedAt)),
+          id: hotspot.id
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal mengirim pesan Telegram");
+      }
+      
+      alert("Peringatan Telegram berhasil dikirim ke Chat ID terkonfigurasi!");
+    } catch (error: any) {
+      alert(`Terjadi kesalahan: ${error.message}`);
+    } finally {
+      setSendingTgId(null);
+    }
+  };
 
   const handleSendWA = async (hotspot: Hotspot) => {
     const target = window.prompt("Masukkan nomor WhatsApp tujuan (contoh: 081234567890):", "");
@@ -284,6 +315,22 @@ export default function Sidebar({
                         <MessageCircle className="w-4 h-4 mr-2" />
                       )}
                       Kirim Peringatan WA
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSendTelegram(hotspot);
+                      }}
+                      disabled={sendingTgId === hotspot.id}
+                      className="w-full min-h-[40px] py-2 px-3 bg-blue-500/10 hover:bg-blue-500/20 active:bg-blue-500/30 border border-blue-500/30 rounded-lg text-xs font-bold transition-colors flex items-center justify-center text-blue-400 group touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {sendingTgId === hotspot.id ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Kirim ke Telegram
                     </button>
 
                     {isNew && (

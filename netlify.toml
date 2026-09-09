@@ -32,6 +32,11 @@
   to = "/.netlify/functions/notify-wa"
   status = 200
 
+[[redirects]]
+  from = "/api/notify-telegram"
+  to = "/.netlify/functions/notify-telegram"
+  status = 200
+
 # Single Page Application (SPA) redirect for client-side routing
 [[redirects]]
   from = "/*"

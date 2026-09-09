@@ -74,6 +74,44 @@ async function startServer() {
     }
   });
 
+  // API route for sending Telegram notifications
+  app.post("/api/notify-telegram", async (req, res) => {
+    try {
+      const { lat, lng, location, date, id } = req.body;
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      
+      if (!token || !chatId) {
+        return res.status(500).json({ error: "Token atau Chat ID Telegram belum dikonfigurasi. Harap tambahkan 'TELEGRAM_BOT_TOKEN' dan 'TELEGRAM_CHAT_ID' di menu Environment Variables." });
+      }
+
+      const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\n[Buka Peta](https://www.google.com/maps/search/?api=1&query=${lat},${lng})`;
+
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: pesan,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        return res.status(response.status).json({ error: errText });
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Error sending Telegram:", error);
+      res.status(500).json({ error: error.message || "Failed to send Telegram message" });
+    }
+  });
+
   // API route to proxy NASA FIRMS
   app.get("/api/hotspots", async (req, res) => {
     try {
