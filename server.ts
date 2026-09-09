@@ -43,7 +43,7 @@ async function startServer() {
 
       const formData = new URLSearchParams();
       formData.append('target', target);
-      formData.append('pesan', pesan);
+      formData.append('message', pesan);
       formData.append('countryCode', '62');
 
       const response = await fetch('https://api.fonnte.com/send', {
