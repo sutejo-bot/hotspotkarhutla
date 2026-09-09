@@ -5,6 +5,8 @@ import { createServer as createViteServer } from "vite";
 async function startServer() {
   const app = express();
   const PORT = 3000;
+  
+  app.use(express.json());
 
   // Simple in-memory cache for NASA FIRMS data (5 minutes TTL)
   const firmsCache = new Map<number, { data: string; timestamp: number }>();
@@ -26,6 +28,51 @@ async function startServer() {
     }
     return chunks;
   }
+
+  // API route for sending WhatsApp notifications via Fonnte
+  app.post("/api/notify-wa", async (req, res) => {
+    try {
+      const { target, lat, lng, location, date, id } = req.body;
+      const token = process.env.FONNTE_TOKEN;
+      
+      if (!token) {
+        return res.status(500).json({ error: "FONNTE_TOKEN is not configured on the server." });
+      }
+
+      const pesan = `🚨 *DARURAT KARHUTLA!* 🚨\nTerdeteksi titik api baru!\n\n🔥 *ID*: ${id}\n📍 *Koordinat*: ${lat}, ${lng}\n🗺️ *Lokasi*: ${location || 'Sedang dimuat...'}\n🕒 *Waktu*: ${date}\n\nSegera lakukan pengecekan ke lokasi!\n\nBuka Peta: https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+      const formData = new URLSearchParams();
+      formData.append('target', target);
+      formData.append('pesan', pesan);
+      formData.append('countryCode', '62');
+
+      const response = await fetch('https://api.fonnte.com/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData.toString()
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        return res.status(response.status).json({ error: errText });
+      }
+
+      const data = await response.json();
+      
+      // Fonnte sometimes returns HTTP 200 but status inside JSON is false
+      if (data.status === false) {
+        return res.status(400).json({ error: data.reason || "Fonnte API rejected the request." });
+      }
+
+      res.json(data);
+    } catch (error: any) {
+      console.error("Error sending WA:", error);
+      res.status(500).json({ error: error.message || "Failed to send WhatsApp message" });
+    }
+  });
 
   // API route to proxy NASA FIRMS
   app.get("/api/hotspots", async (req, res) => {

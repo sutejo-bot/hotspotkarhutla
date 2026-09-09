@@ -27,6 +27,11 @@
   to = "/.netlify/functions/geocode"
   status = 200
 
+[[redirects]]
+  from = "/api/notify-wa"
+  to = "/.netlify/functions/notify-wa"
+  status = 200
+
 # Single Page Application (SPA) redirect for client-side routing
 [[redirects]]
   from = "/*"

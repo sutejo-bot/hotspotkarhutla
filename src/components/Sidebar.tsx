@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Hotspot, HotspotTimeRange } from "../types";
-import { Flame, CheckCircle, ShieldAlert, X, MapPin, Calendar, Clock, RefreshCw, Radio } from "lucide-react";
+import { Flame, CheckCircle, ShieldAlert, X, MapPin, Calendar, Clock, RefreshCw, Radio, MessageCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn, getTimeRangeLabel, getTimeRangeDescription, formatHotspotRelativeTime, formatDateWITA, formatTimeWITA, fetchAddressFromCoordinates } from "../utils";
 import PrintPreviewModal from "./PrintPreviewModal";
@@ -47,6 +47,41 @@ export default function Sidebar({
   onOpenPrintPreview
 }: SidebarProps) {
   const newCount = hotspots.filter(h => h.status === "new").length;
+  const [sendingWaId, setSendingWaId] = useState<string | null>(null);
+
+  const handleSendWA = async (hotspot: Hotspot) => {
+    const target = window.prompt("Masukkan nomor WhatsApp tujuan (contoh: 081234567890):", "");
+    if (!target) return;
+
+    setSendingWaId(hotspot.id);
+    try {
+      const address = await fetchAddressFromCoordinates(hotspot.location.lat, hotspot.location.lng);
+      
+      const response = await fetch('/api/notify-wa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target,
+          lat: hotspot.location.lat,
+          lng: hotspot.location.lng,
+          location: address,
+          date: formatDateWITA(new Date(hotspot.detectedAt)) + ' ' + formatTimeWITA(new Date(hotspot.detectedAt)),
+          id: hotspot.id
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal mengirim pesan");
+      }
+      
+      alert("Peringatan WhatsApp berhasil dikirim!");
+    } catch (error: any) {
+      alert(`Terjadi kesalahan: ${error.message}`);
+    } finally {
+      setSendingWaId(null);
+    }
+  };
 
   return (
     <>
@@ -234,18 +269,36 @@ export default function Sidebar({
 
                   <SidebarAddress lat={hotspot.location.lat} lng={hotspot.location.lng} />
 
-                  {isNew && (
+                  <div className="mt-3 flex flex-col gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        onAcknowledge(hotspot.id);
+                        handleSendWA(hotspot);
                       }}
-                      className="w-full mt-3 min-h-[44px] py-2.5 px-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center text-slate-200 group touch-manipulation"
+                      disabled={sendingWaId === hotspot.id}
+                      className="w-full min-h-[40px] py-2 px-3 bg-green-500/10 hover:bg-green-500/20 active:bg-green-500/30 border border-green-500/30 rounded-lg text-xs font-bold transition-colors flex items-center justify-center text-green-400 group touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <CheckCircle className="w-4 h-4 mr-2 text-emerald-400 group-hover:scale-110 transition-transform" />
-                      Konfirmasi Ancaman
+                      {sendingWaId === hotspot.id ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                      )}
+                      Kirim Peringatan WA
                     </button>
-                  )}
+
+                    {isNew && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAcknowledge(hotspot.id);
+                        }}
+                        className="w-full min-h-[40px] py-2 px-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center text-slate-200 group touch-manipulation"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2 text-emerald-400 group-hover:scale-110 transition-transform" />
+                        Konfirmasi Ancaman
+                      </button>
+                    )}
+                  </div>
                 </motion.div>
               );
             })
